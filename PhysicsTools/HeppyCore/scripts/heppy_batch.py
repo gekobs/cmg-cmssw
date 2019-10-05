@@ -298,7 +298,7 @@ def batchScriptIC(jobDir):
    cmssw_release = os.environ['CMSSW_BASE']
    script = """#!/bin/bash
 export X509_USER_PROXY=/home/hep/$USER/myproxy
-source /vols/cms/grid/setup.sh
+source /vols/grid/cms/setup.sh
 cd {jobdir}
 cd {cmssw}/src
 eval `scramv1 ru -sh`
