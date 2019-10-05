@@ -212,8 +212,24 @@ class LeptonAnalyzer( Analyzer ):
             for lep in event.inclusiveLeptons:
                 self.attachIsolationScan(lep)
 
+        def idWP(muon, X, type_="muon"):
+            """Create an integer equal to 1-2-3-4 for (loose,veto,medium,tight)"""
+            veto = "Veto" if type_!="muon" else "Loose"
+            id=0
+            if getattr(muon, "{}ID".format(type_))(X.format("Loose")):
+                id=1
+            if getattr(muon, "{}ID".format(type_))(X.format(veto)):
+                id=2
+            if getattr(muon, "{}ID".format(type_))(X.format("Medium")):
+                id=3
+            if getattr(muon, "{}ID".format(type_))(X.format("Tight")):
+                id=4
+            return id
+
+
         # make loose leptons (basic selection)
         for mu in inclusiveMuons:
+                mu.idWP = idWP(mu, self.cfg_ana.loose_muon_id.replace("Loose", "{}"), "muon")
                 mu.looseIdOnly = mu.muonID(self.cfg_ana.loose_muon_id)
                 if (mu.looseIdOnly and 
                         mu.pt() > self.cfg_ana.loose_muon_pt and abs(mu.eta()) < self.cfg_ana.loose_muon_eta and 
@@ -227,6 +243,7 @@ class LeptonAnalyzer( Analyzer ):
                     event.otherLeptons.append(mu)
         looseMuons = event.selectedLeptons[:]
         for ele in inclusiveElectrons:
+               ele.idWP = idWP(ele, self.cfg_ana.loose_electron_id.replace("Loose", "{}"), "electron")
                ele.looseIdOnly = ele.electronID(self.cfg_ana.loose_electron_id)
                if ele.looseIdOnly < 0: print "Negative id for electron of pt %.1f, id %s, ret %r"  % (ele.pt(),self.cfg_ana.loose_electron_id, ele.looseIdOnly) 
                if (ele.looseIdOnly and

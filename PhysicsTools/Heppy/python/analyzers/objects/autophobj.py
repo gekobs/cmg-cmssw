@@ -83,6 +83,7 @@ leptonType = NTupleObjectType("lepton", baseObjectTypes = [ particleType ], vari
 
 ### EXTENDED VERSION WITH INDIVIUAL DISCRIMINATING VARIABLES
 leptonTypeExtra = NTupleObjectType("leptonExtra", baseObjectTypes = [ leptonType ], variables = [
+    NTupleVariable("idWP", lambda lepton : lepton.idWP, int, help="Lepton id 0-1-2-3-4 = {0:'fail', 1:'Loose', 2:'Veto', 3:'Medium', 4:'Tight'}. Veto=Loose for muons"),
     # Loose id 
     NTupleVariable("looseIdOnly",   lambda x : x.looseIdOnly, int, help="Loose ID as per LeptonAnalyzer (only what configured in the id part, not also dxy/dz/iso cuts of the lepton analyzer)"),
     # Extra isolation variables
@@ -92,7 +93,7 @@ leptonTypeExtra = NTupleObjectType("leptonExtra", baseObjectTypes = [ leptonType
     NTupleVariable("softMuonId", lambda x : x.muonID("POG_ID_Soft") if abs(x.pdgId())==13 else 1, int, help="Muon POG Soft id"),
     NTupleVariable("pfMuonId",   lambda x : x.muonID("POG_ID_Loose") if abs(x.pdgId())==13 else 1, int, help="Muon POG Loose id"),
     # Extra electron ID working points
-    NTupleVariable("eleCutId2012",     lambda x : (1*x.electronID("POG_Cuts_ID_2012_Veto") + 1*x.electronID("POG_Cuts_ID_2012_Loose") + 1*x.electronID("POG_Cuts_ID_2012_Medium") + 1*x.electronID("POG_Cuts_ID_2012_Tight")) if abs(x.pdgId()) == 11 else -1, int, help="Electron cut-based id (POG 2012, full5x5 shapes): 0=none, 1=veto, 2=loose, 3=medium, 4=tight"),
+
     # Extra tracker-related variables
     NTupleVariable("trackerLayers", lambda x : (x.track() if abs(x.pdgId())==13 else x.gsfTrack()).hitPattern().trackerLayersWithMeasurement(), int, help="Tracker Layers"),
     NTupleVariable("pixelLayers", lambda x : (x.track() if abs(x.pdgId())==13 else x.gsfTrack()).hitPattern().pixelLayersWithMeasurement(), int, help="Pixel Layers"),
