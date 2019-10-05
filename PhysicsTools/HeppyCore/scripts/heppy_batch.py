@@ -345,8 +345,8 @@ class MyBatchManager( BatchManager ):
        elif mode == 'LOCAL':
            scriptFile.write( batchScriptLocal( storeDir, value) )  # watch out arguments are swapped (although not used)
        elif mode == 'PISA' :
-	   scriptFile.write( batchScriptPISA( storeDir, value) ) 	
-       elif mode == 'PADOVA' :
+	         scriptFile.write( batchScriptPISA( storeDir, value) ) 	
+       elif mode == 'PADOVA':
            scriptFile.write( batchScriptPADOVA( value, jobDir) )        
        elif mode == 'IC':
            scriptFile.write( batchScriptIC(jobDir) )
