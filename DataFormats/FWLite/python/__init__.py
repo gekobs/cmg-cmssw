@@ -643,6 +643,7 @@ class Events:
             return self._mode
         filenamesSVec = ROOT.vector("string") ()
         for name in self._filenames:
+            name = str(name) # casting unicode to string
             filenamesSVec.push_back (name)
         if self._secondaryFilenames:
             secondarySVec =  ROOT.vector("string") ()
