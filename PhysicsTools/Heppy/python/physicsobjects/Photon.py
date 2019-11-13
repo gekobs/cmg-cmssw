@@ -136,7 +136,7 @@ class Photon(PhysicsObject ):
         "chaHadIso":[0.202,0.034],"neuHadIso":[[0.264,0.0148,0.000017],[0.586, 0.0163,0.000014]],"phoIso":[[2.362,0.0047],[2.617,0.0034]]},
 
         "POG_SPRING16_25ns_Tight_noChaHadIso_noSigmaIEtaIEta": {"conversionVeto": [True,True], "H/E":[0.0269,0.0213],"sigmaIEtaIEta":[0.020,0.040],
-        "chaHadIso":[10.0,10.0],"neuHadIso":[[0.264,0.0148,0.000017],[0.586, 0.0163,0.000014]],"phoIso":[[2.362,0.0047],[2.617,0.0034]]},
+        "chaHadIso":[20.0,20.0],"neuHadIso":[[0.264,0.0148,0.000017],[0.586, 0.0163,0.000014]],"phoIso":[[2.362,0.0047],[2.617,0.0034]]},
 
         # https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedPhotonIdentificationRun2#CSA14_selections_for_20_bx_25_sc
         "POG_CSA14_25ns_Loose": {"conversionVeto": [True,True], "H/E":[0.553,0.062],"sigmaIEtaIEta":[0.0099,0.0284],
