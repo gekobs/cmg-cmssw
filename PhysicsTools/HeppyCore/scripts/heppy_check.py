@@ -31,28 +31,39 @@ for dir in dirs:
         continue
     if dir.find('_Chunk') == -1:
         continue
-    logName  = '/'.join([dir, 'log.txt'])
-    if not os.path.isfile( logName ):
-        print dir, ': log.txt does not exist'
+    skimRepName = '/'.join([dir,'skimAnalyzerCount/SkimReport.txt'])
+    skimRepName2= '/'.join([dir,'skimAnalyzerCount/SkimReport.pck'])
+    if not os.path.isfile( skimRepName ) and not os.path.isfile( skimRepName2 ):
+        print dir, ': SkimReport.txt does not exist'
         badDirs.append(dir)
         continue
-    logFile = open(logName)
-    nEvents = -1
-    for line in logFile:
-        try:
-            nEvents = line.split('processed:')[1]
-        except:
-            pass
-    if nEvents == -1:
-        print dir, 'cannot find number of processed events'
-    elif nEvents == 0:
-        print dir, '0 events'
-    else:
-        continue
-    badDirs.append(dir)
+
+    # logName  = '/'.join([dir, 'log.txt'])
+    # if not os.path.isfile( logName ):
+    #     print dir, ': log.txt does not exist'
+    #     badDirs.append(dir)
+    #     continue
+    # logFile = open(logName)
+    # nEvents = -1
+    # for line in logFile:
+    #     try:
+    #         nEvents = line.split('processed:')[1]
+    #     except:
+    #         pass
+    # if nEvents == -1:
+    #     print dir, 'cannot find number of processed events'
+    # elif nEvents == 0:
+    #     print dir, '0 events'
+    # else:
+    #     continue
+    # badDirs.append(dir)
 
 print 'list of bad directories:'
 pprint.pprint(badDirs)
+with open("badDirs.txt","w") as file:
+    for dir in badDirs:
+        file.write(dir)
+        file.write('\n')
 
 if options.batch is not None:
     for dir in badDirs:
