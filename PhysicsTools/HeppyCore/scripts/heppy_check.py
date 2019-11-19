@@ -62,6 +62,7 @@ print 'list of bad directories:'
 pprint.pprint(badDirs)
 with open("badDirs.txt","w") as file:
     for dir in badDirs:
+        file.write('cmgChunkResub')
         file.write(dir)
         file.write('\n')
 
