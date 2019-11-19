@@ -30,7 +30,7 @@ class PhotonAnalyzer( Analyzer ):
         if self.doFootprintRemovedIsolation:
             self.footprintRemovedIsolationPUCorr =  self.cfg_ana.footprintRemovedIsolationPUCorr
             self.IsolationComputer = heppy.IsolationComputer()
-	#FIXME: only Embedded works
+  #FIXME: only Embedded works
         if self.cfg_ana.doPhotonScaleCorrections:
             conf = cfg_ana.doPhotonScaleCorrections
             self.photonEnergyCalibrator = Run2PhotonCalibrator(
@@ -61,7 +61,12 @@ class PhotonAnalyzer( Analyzer ):
         count = self.counters.counter('events')
         count.register('all events')
         count.register('has >=1 gamma at preselection')
-        count.register('has >=1 selected gamma')
+        count.register('has >=1 selected gamma')    
+        if self.cfg_ana.checkGen and self.cfg_comp.isMC:
+            self.counters.addCounter('genInfo')
+            self.counters.counter('genInfo').register('all events')
+            self.counters.counter('genInfo').register('has >=1 prompt gamma')
+            self.counters.counter('genInfo').register('has >=1 prompt direct gamma')
 
     def makePhotons(self, event):
         event.allphotons = map( Photon, self.handles['photons'].product() )
@@ -87,7 +92,16 @@ class PhotonAnalyzer( Analyzer ):
 
             gamma.rho = float(self.handles['rhoPhoton'].product()[0])
             # https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedPhotonIdentificationRun2#Selection_implementation_details
-            if 'PHYS14_25ns' in self.cfg_ana.gammaID:
+            if 'SPRING16' in self.cfg_ana.gammaID:
+                if   abs(gamma.eta()) < 1.0:   gamma.EffectiveArea03 = [ 0.0360, 0.0597, 0.1210 ]
+                elif abs(gamma.eta()) < 1.479: gamma.EffectiveArea03 = [ 0.0377, 0.0807, 0.1107 ]
+                elif abs(gamma.eta()) < 2.0:   gamma.EffectiveArea03 = [ 0.0306, 0.0629, 0.0699 ]
+                elif abs(gamma.eta()) < 2.2:   gamma.EffectiveArea03 = [ 0.0283, 0.0197, 0.1056 ]
+                elif abs(gamma.eta()) < 2.3:   gamma.EffectiveArea03 = [ 0.0254, 0.0184, 0.1457 ]
+                elif abs(gamma.eta()) < 2.4:   gamma.EffectiveArea03 = [ 0.0217, 0.0284, 0.1719 ]
+                else:                          gamma.EffectiveArea03 = [ 0.0167, 0.0591, 0.1998 ] 
+
+            elif 'PHYS14_25ns' in self.cfg_ana.gammaID:
                 if   abs(gamma.eta()) < 1.0:   gamma.EffectiveArea03 = [ 0.0234, 0.0053, 0.078  ]
                 elif abs(gamma.eta()) < 1.479: gamma.EffectiveArea03 = [ 0.0189, 0.0103, 0.0629 ]
                 elif abs(gamma.eta()) < 2.0:   gamma.EffectiveArea03 = [ 0.0171, 0.0057, 0.0264 ]
@@ -97,7 +111,7 @@ class PhotonAnalyzer( Analyzer ):
                 else:                          gamma.EffectiveArea03 = [ 0.0035, 0.1709, 0.1484 ]
             else:
                 # default: values for SPRING15_25ns
-                if   abs(gamma.eta()) < 1.0:   gamma.EffectiveArea03 = [ 0.0, 0.0599, 0.1271  ]
+                if   abs(gamma.eta()) < 1.0:   gamma.EffectiveArea03 = [ 0.0, 0.0599, 0.1271 ]
                 elif abs(gamma.eta()) < 1.479: gamma.EffectiveArea03 = [ 0.0, 0.0819, 0.1101 ]
                 elif abs(gamma.eta()) < 2.0:   gamma.EffectiveArea03 = [ 0.0, 0.0696, 0.0756 ]
                 elif abs(gamma.eta()) < 2.2:   gamma.EffectiveArea03 = [ 0.0, 0.0360, 0.1175 ]
@@ -161,7 +175,57 @@ class PhotonAnalyzer( Analyzer ):
         self.counters.counter('events').inc('all events')
         if foundPhoton: self.counters.counter('events').inc('has >=1 gamma at preselection')
         if len(event.selectedPhotons): self.counters.counter('events').inc('has >=1 selected gamma')
-       
+
+    def checkGenPhoton(self, event):
+        def isHardParton(particle):
+            return abs(particle.pdgId()) in [1,2,3,4,5,6,21] and particle.status() == 23
+
+        def isPromptPhoton(photon):
+            return photon.status() == 1 and abs(photon.mother(0).pdgId()) <= 22 and abs(photon.mother(0).pdgId()) not in [11,13,15]
+
+        def isPromptStrictPhoton(photon):
+            return photon.status() == 1 and abs(photon.mother(0).pdgId()) == 22
+
+        def isDirectPhoton(photon,partons):
+            for parton in partons:
+                # print deltaR(photon.eta(),photon.phi(),parton.eta(),parton.phi())
+                if deltaR(photon.eta(),photon.phi(),parton.eta(),parton.phi()) < 0.4:
+                    return False
+            return True
+
+        def getMinDeltaR(photon,partons):
+            dRs = []
+            for parton in partons: 
+                dr = deltaR(photon.eta(),photon.phi(),parton.eta(),parton.phi())
+                dRs.append(dr)
+            if len(dRs)>0: return sorted(dRs)[0]
+            else: return None
+
+        self.counters.counter('genInfo').inc('all events')
+        event.genPhotons = [ x for x in event.genParticles if x.status() == 1 and abs(x.pdgId()) == 22 ]
+
+        partons = [ x for x in event.genParticles if isHardParton(x) ]
+        promptGenPhotons = [  x for x in event.genPhotons if isPromptPhoton(x) ]
+        promptStrictGenPhotons = [  x for x in event.genPhotons if isPromptStrictPhoton(x) ]
+        promptDirectGenPhotons = [ x for x in promptGenPhotons if isDirectPhoton(x,partons) ]
+        promptStrictDirectGenPhotons = [ x for x in promptStrictGenPhotons if isDirectPhoton(x,partons) ]
+        event.nPromptGenPhotons = len(promptGenPhotons)
+        event.nPromptStrictGenPhotons = len(promptStrictGenPhotons)
+        event.nPromptDirectGenPhotons = len(promptDirectGenPhotons)
+        event.nPromptStrictDirectGenPhotons = len(promptStrictDirectGenPhotons)
+        if event.nPromptGenPhotons:
+            self.counters.counter('genInfo').inc('has >=1 prompt gamma')
+        if event.nPromptDirectGenPhotons:
+            self.counters.counter('genInfo').inc('has >=1 prompt direct gamma')
+
+        # Add further gen level info
+        for gamma in event.genPhotons:
+            gamma.isPrompt = isPromptPhoton(gamma)
+            gamma.isPromptStrict = isPromptStrictPhoton(gamma)
+            gamma.isPromptDirect = isDirectPhoton(gamma,partons) and isPromptPhoton(gamma)
+            gamma.isPromptStrictDirect = isDirectPhoton(gamma,partons) and isPromptStrictPhoton(gamma)
+            gamma.drMinParton = getMinDeltaR(gamma,partons)
+
     def matchPhotons(self, event):
         event.genPhotons = [ x for x in event.genParticles if x.status() == 1 and abs(x.pdgId()) == 22 ]
         event.genPhotonsWithMom = [ x for x in event.genPhotons if x.numberOfMothers()>0 ]
@@ -174,6 +238,7 @@ class PhotonAnalyzer( Analyzer ):
         for gamma in event.allphotons:
           gen = match[gamma]
           gamma.mcGamma = gen
+          gamma.isPrompt = False
           if gen and gen.pt()>=0.5*gamma.pt() and gen.pt()<=2.*gamma.pt():
             gamma.mcMatchId = 22
             sumPt03 = 0.;
@@ -201,6 +266,7 @@ class PhotonAnalyzer( Analyzer ):
               if deltar < deltaRmin:
                 deltaRmin = deltar
             gamma.drMinParton = deltaRmin
+            gamma.isPrompt = gen.isPromptFinalState()
           else:
             genNoMom = matchNoMom[gamma]
             if genNoMom:
@@ -340,6 +406,10 @@ class PhotonAnalyzer( Analyzer ):
 
     def process(self, event):
         self.readCollections( event.input )
+    
+        if self.cfg_ana.checkGen and self.cfg_comp.isMC:
+            self.checkGenPhoton(event)
+
         self.makePhotons(event)
 #        self.printInfo(event)   
 
@@ -351,7 +421,6 @@ class PhotonAnalyzer( Analyzer ):
 
         if self.cfg_ana.do_mc_match and hasattr(event, 'genParticles'):
             self.matchPhotons(event)
-
 
         return True
 
@@ -366,13 +435,15 @@ setattr(PhotonAnalyzer,"defaultConfig",cfg.Analyzer(
     gammaID = "PhotonCutBasedIDLoose_CSA14",
     rhoPhoton = 'fixedGridRhoFastjetAll',
     gamma_isoCorr = 'rhoArea',
+    effectiveAreas = 'PHYS14_25ns_v1',
     # Footprint-removed isolation, removing all the footprint of the photon
     doFootprintRemovedIsolation = False, # off by default since it requires access to all PFCandidates
     packedCandidates = 'packedPFCandidates',
     footprintRemovedIsolationPUCorr = 'rhoArea', # Allowed options: 'rhoArea', 'raw' (uncorrected)
     conversionSafe_eleVeto = False,
     do_mc_match = True,
-    do_randomCone = False,
+    do_randomCone = True,
+    checkGen = True,
   )
 )
 
